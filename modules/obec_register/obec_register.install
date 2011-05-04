@@ -1,0 +1,83 @@
+<?
+function obec_register_schema() { 
+   $schema['obec_register_auto_complete'] = array(
+      'description' => t("Stores auto complete data."),
+      'fields' => array(
+  	    'id' => array(
+  	        'description' => t("data Id."),
+  	        'type' => 'int',
+  	        'unsigned' => TRUE,
+  	        'not null' => TRUE
+  	      ),
+  		  'school' => array(
+  			  'description' => t("school name"),
+  		    'type' => 'varchar',
+  		    'length' => 255,
+  		    'not null' => TRUE,
+  		  ),
+  		  'sector' => array(
+  			  'description' => t("sector number"),
+  			  'type' => 'int',
+  			  'unsigned' => TRUE,
+  			),
+  		  'street' => array(
+  			  'description' => t("street name"),
+  		    'type' => 'varchar',
+  		    'length' => 255,
+  		  ),
+  		  'village' => array(
+  			  'description' => t("village name"),
+  		    'type' => 'varchar',
+  		    'length' => 255,
+  		  ),
+  		  'subdistrict' => array(
+  			  'description' => t("subdistrict name"),
+  		    'type' => 'varchar',
+  		    'length' => 100,
+  		  ),
+  		  'district' => array(
+  			  'description' => t("district name"),
+  		    'type' => 'varchar',
+  		    'length' => 100,
+  		  ),
+  		  'zipcode' => array(
+  			  'description' => t("zipcode name"),
+  		    'type' => 'varchar',
+  		    'length' => 5,
+  		  ),
+  		  'province' => array(
+  			  'description' => t("province name"),
+  		    'type' => 'varchar',
+  		    'length' => 60,
+  		  ),
+  		),
+      'primary key' => array('id'),
+    );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function obec_register_install() {
+  // Create tables.
+  drupal_install_schema('obec_register');
+	$handle = @fopen(drupal_get_path('module', 'obec_register') . '/school.sql', "r"); 
+	if ($handle) { $count=1;
+	   while (!feof($handle)) { 
+	       $line = fgets($handle, 4096); 
+	       $linearr =  explode(",",$line);
+	       $provincearr = explode(" ",$linearr[7]);
+	       $province = $provincearr[0];
+	      // $query = "INSERT INTO obec_register_auto_complete VALUES('".$linearr[0]."',".$linearr[1].",'".$linearr[2]."','".$linearr[3]."','".$linearr[4]."','".$linearr[5]."','".$linearr[6]."','".$province."');";       
+	       $query = "INSERT INTO obec_register_auto_complete VALUES(%d,'%s',%d,'%s','%s','%s','%s','%s','%s')";
+		     //print($query);
+		     db_query($query,$count++,$linearr[0],$linearr[1],$linearr[2],$linearr[3],$linearr[4],$linearr[5],$linearr[6],$province);
+	   } 
+	   fclose($handle); 
+	}
+}
+function obec_register_uninstall() {
+  // Remove tables.
+   drupal_uninstall_schema('obec_register');
+}

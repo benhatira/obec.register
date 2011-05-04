@@ -1,0 +1,412 @@
+<?php
+
+function obec_register_menu() {
+
+  	$items = array();
+  	$items['json/school'] = array(
+  		'title' => 'school1 ',
+  		'description' => t("school list json"),
+  		'page callback' => 'obec_register_school_json',
+  		//'page arguments' => array(3),
+  		'type' => MENU_CALLBACK,
+  		'access callback' => TRUE
+  	);
+  	$items['json/school_detail'] = array(
+  		'title' => 'school 2',
+  		'description' => t("school detail"),
+  		'page callback' => 'obec_register_school_detail_json',
+  		//'page arguments' => array(3),
+  		'type' => MENU_CALLBACK,
+  		'access callback' => TRUE
+  	);
+  	
+  	$items['account/pending'] = array(
+  		'title' => 'Account pending',
+  		'page callback' => 'drupal_get_form',
+  		'page arguments' => array('obec_register_approve_form'),
+  		'access arguments' => array('access approve'),
+  		'type' => MENU_CALLBACK,
+  	);
+
+  	return $items;
+}
+
+function obec_register_theme() {
+	return array(
+		'obec_register_approve_form' => array('arguments' => array('form' => NULL),),
+	);
+}
+
+function theme_obec_register_approve_form($form) {
+	$rows = array();
+	foreach (element_children($form) as $key) {
+		$row = array();
+		if (isset($form[$key]['name_en'])) {
+			$row[] = array('data' => drupal_render($form['approve'][$key]), 'class' => 'checkbox');
+ 
+			$row[] = ''. drupal_render($form[$key]['name_en']) .'';
+			$row[] = array('data' => drupal_render($form[$key]['name_th']));
+			$row[] = array('data' => drupal_render($form[$key]['access']));
+		//	$row[] = array('data' => drupal_render($form[$key]['createdon']));
+ 
+			$rows[] = $row;
+		}
+	}
+	// Individual table headers.
+	$header = array();
+	$header[] = array('data' => t('approve'), 'class' => 'checkbox');
+	$header[] = t('Name(en)');
+	$header[] = t('Name(th)');
+	$header[] = t('Access');
+	//$header[] = t('Created on');
+ 
+	$output = theme('table', $header, $rows);
+	$output .= drupal_render($form);
+	return $output;
+}
+
+function obec_register_approve_form() {
+	$query = "SELECT n.nid,n.title,s.field_school_name_en_value as name_en,u.access FROM {content_type_school} as s LEFT JOIN {node} as n on (s.nid = n.nid) LEFT JOIN {users} as u on (n.uid = u.uid) WHERE s.field_school_approve_by_uid is NULL ORDER by u.access ASC ";//field_school_approve_by_uid //and u.access <> 0
+	$rs = db_query($query);
+	$options = array();
+	if ($rs) {
+		while ($data = db_fetch_array($rs)) {
+            $options[$data['nid']] = ''; 
+            $form[$data['nid']]['name_en'] = array('#value' => $data['name_en']);
+            $form[$data['nid']]['name_th'] = array('#value' => $data['title']);
+            $form[$data['nid']]['access'] = array('#value' => date('m-d-Y',$data['access']));
+            //$form[$data['nid']]['createdon'] = array('#value' => date('m-d-Y', $data['access']));
+		}
+	}
+ 
+	$form['approve'] = array(
+		'#type' => 'checkboxes',
+		'#options' => $options,
+		//‘#default_value’ => $status,
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Submit'),
+	);
+	$form['cancel'] = array(
+		'#type' => 'markup',
+		'#value' => l(t('Cancel'), ''),
+	);
+//	$form['#redirect'] = ‘featured_product_mgmt’;
+ 
+	return $form;
+}
+
+function obec_register_approve_form_submit($form_id, $form) {
+  global $user;
+	$form_values = $form['values'];
+	$approved = $form_values['approve'];
+	$selected_school = array();
+ 
+	foreach($approved as $key => $value) {
+		if ($value) {
+			$selected_schools[] = "($value)";
+		}
+	}
+ 
+	$value_string = @implode(',', $selected_schools);
+  //echo $value_string;//exit;
+ 
+	if (count($selected_schools)) {
+		$query = "UPDATE {content_type_school} SET field_school_approve_by_uid = ".$user->uid." WHERE nid IN $value_string";//echo $query;exit;
+		db_query($query);
+		//TODO: create account on server
+	}
+ 
+	drupal_set_message(t('Selected school has been approved successfully.'));
+}
+
+function obec_register_school_detail_json(){
+  $param = $_GET["term"];  
+  $result1 = db_query("SELECT * FROM  obec_register_auto_complete WHERE id = $param");
+  if($row = db_fetch_array($result1)) {
+    $sector = $row["sector"]==""||$row["sector"]=="-" ? "" : ("หมู่ ".$row["sector"]." ");
+    $street = $row["street"]==""||$row["street"]=="-" ? "" : ("ถนน ".$row["street"]." ");
+    $village = $row["village"]=="" ? "" : ("หมู่บ้าน ".$row["village"]." ");
+    $subdistrict = "ตำบล ".$row["subdistrict"]." ";
+    $district = "อำเภอ ".$row["district"]." ";
+    $address = $sector . $street . $village . $subdistrict . $district;
+    $data = $address.','.$row["zipcode"].','.$row["province"];
+  }
+  //$data = substr($json_data,0,-1);
+  $response =  $data;
+  echo $response ;exit;
+}
+
+function obec_register_school_json(){
+  $param = $_GET["term"];  
+  $json_data = "";
+  $x = 0;
+  $result1 = db_query("SELECT * FROM  obec_register_auto_complete WHERE school REGEXP '^$param' LIMIT 10");
+  while($row = db_fetch_array($result1)) {
+    //$json_data .= '{"id":"'.$row["id"].'","name":"'.$row["school"].'","address":"'.$address.'","zipcode":"'.$row["zipcode"].'","province":"'.$row["province"].'"},';
+   // $json[$x++] = array("id" => $row["id"] , "name" => $row["school"]);
+    $json_data .= '{"id":"'.$row["id"].'","name":"'.$row["school"].'"},';
+  }
+  $json_data = substr($json_data,0,-1);
+  
+  
+  $response =  $_GET["callback"] . "([" . $json_data . "])";
+  echo $response ;exit;
+ // print '[{"name" : "test1" , "sname" : "test2"}]';exit;
+}
+
+function obec_register_form_user_register_alter(&$form, &$form_state) {
+ 	// hide username field
+ 	$form['name'] = array(
+   	'#type' => 'hidden',
+    '#title' => 'Username',
+    '#default_value' => '',
+    '#maxlength' => 60,
+    '#description' => "Spaces are allowed; punctuation is not allowed except for periods, hyphens, and underscores.",
+  );
+  
+  $form['mail'] = array(
+     '#type' => 'hidden',
+     '#title' => 'E-mail address',
+     '#default_value' => '', 
+     '#maxlength' => 64,
+     '#description' => "A valid e-mail address. All e-mails from the system will be sent to this address. The e-mail address is not made public and will only be used if you wish to receive a new password or wish to receive certain news or notifications by e-mail."
+  );	
+
+ 	drupal_add_js(drupal_get_path('module', 'obec_register') . '/js/jquery.js');
+ 	drupal_add_js(drupal_get_path('module', 'obec_register') . '/js/jquery-ui.js');
+ 	drupal_add_js(drupal_get_path('module', 'obec_register') . '/js/form.js');
+ 	drupal_add_css(drupal_get_path('module', 'obec_register') . '/css/ui-lightness/jquery-ui-1.8.11.custom.css');
+ 	$form_ext = obec_register_additional_form($form_state);
+ 	//unset($form_ext['submit']);
+	//unset($form_ext['details']['business_income']);
+ 	$form['extend'] = $form_ext;
+ 	$form['#validate'][0] = '_obec_register_user_register_validate';
+ 	$form['#validate'][1] = 'user_profile_form_validate';
+	$form['#submit'][] = '_obec_register_create_school';
+	$form['#submit'][] = '_obec_register_create_profile';
+}
+
+function obec_register_additional_form($form_state) {
+  $form['profile'] = array(
+    '#type' => 'fieldset',
+    '#weight' => 10,
+    '#title' => t('ข้อมูลผู้ใช้'),
+    '#collapsible' => FALSE,
+  );
+  $form['profile']['profile_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('ชื่อ - นามสกุล'),
+    '#size' => 30,
+    '#maxlength' => 150,
+    '#weight' => 11,
+  );
+  $form['profile']['profile_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('ที่อยู่'),
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#weight' => 11,
+  );
+  $form['profile']['profile_province'] = array(
+    '#type' => 'textfield',
+    '#title' => t('จังหวัด'),
+    '#size' => 30,
+    '#maxlength' => 30,
+    '#weight' => 13,
+  );
+  $form['profile']['profile_position'] = array(
+    '#type' => 'textfield',
+    '#title' => t('ตำแหน่ง'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 16,
+  );
+  $form['profile']['profile_tel'] = array(
+    '#type' => 'textfield',
+    '#title' => t('เบอร์โทรศัพท์'),
+    '#size' => 30,
+    '#maxlength' => 30,
+    '#weight' => 17,
+  );
+  $form['profile']['profile_email1'] = array(
+    '#type' => 'textfield',
+    '#title' => t('อีเมล 1'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 18,
+  );
+  $form['profile']['profile_email2'] = array(
+    '#type' => 'textfield',
+    '#title' => t('อีเมล 2'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 19,
+  );
+
+ //details block 
+  $form['school'] = array(
+    '#type' => 'fieldset',
+    '#weight' => 20,
+    '#title' => t('รายละเอียดโรงเรียน'),
+    '#collapsible' => FALSE,
+  );
+  $form['school']['school_domain'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Domain'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 21,
+  );
+  $form['school']['school_url'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Url'),
+    '#size' => 30,
+     '#maxlength' => 60,
+     '#weight' => 22,
+  );
+  $form['school']['school_name_en'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School name [en]'),
+    '#size' => 30,
+    '#maxlength' => 100,
+    '#weight' => 23,
+  );
+  $form['school']['school_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 24,
+  );
+  $form['school']['school_name_th'] = array(
+    '#type' => 'textfield',
+    '#title' => t('ชื่อโรงเรียน'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 25,
+  );
+  $form['school']['school_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('ที่อยู่'),
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#weight' => 26,
+  );
+  $form['school']['school_zipcode'] = array(
+    '#type' => 'textfield',
+    '#title' => t('รหัสไปรษณีย์'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 27,
+  );
+  $form['school']['school_province'] = array(
+    '#type' => 'textfield',
+    '#title' => t('จังหวัด'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 28,
+  );
+  $form['school']['school_tel'] = array(
+    '#type' => 'textfield',
+    '#title' => t('เบอร์โทรศัพท์'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 29,
+  );
+  $form['school']['school_location'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Location'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#weight' => 30,
+  );
+           
+  return $form;
+}
+
+function _obec_register_user_register_validate($form, &$form_state) {
+  //echo "<pre>"; print_r($form_state); echo "</pre>";
+  $username = $form_state['values']['school_name_en'];
+  $email = $form_state['values']['profile_email1'];
+  
+  if($username == '' or $username == null) _obec_register_form_error_helper('school name[en]','กรุณากรอกชื่อโรงเรียนภาษาอังกฤษ');
+  if($email == '' or $email == null) _obec_register_form_error_helper('email1','กรุณากรอกอีเมล์1');
+
+  $form_state['values']['name'] = $username;$form_state['clicked_button']['#post']['name'] = $username;
+
+	$form_state['values']['mail'] = $email;$form_state['clicked_button']['#post']['mail'] = $email;
+}
+
+function _obec_register_form_error_helper($name,$msg) {
+  form_set_error($name, t($msg));
+  array_pop($_SESSION['messages']['error']);
+  drupal_set_message($msg, 'error');
+}
+/*
+function _obec_register_add_additional_data($form, &$form_state) {
+  $user = $form_state['user'];
+  //profile_data
+  $profile_name = $form_state['values']['profile_name'];
+  $profile_address = $form_state['values']['profile_address'];
+  $profile_province = $form_state['values']['profile_province'];
+  $profile_position = $form_state['values']['profile_position'];
+  $profile_tel = $form_state['values']['profile_tel'];
+  $profile_email1 = $form_state['values']['profile_email1'];
+  $profile_email2 = $form_state['values']['profile_email2']; 
+  //school_data
+  $school_domain = $form_state['values']['school_domain'];
+  $school_url = $form_state['values']['school_url'];
+  $school_name_en = $form_state['values']['school_name_en'];
+  $school_password = $form_state['values']['school_password'];
+  $school_name_th = $form_state['values']['school_name_th'];
+  $school_address = $form_state['values']['school_address'];
+  $school_zipcode = $form_state['values']['school_zipcode'];
+  $school_province = $form_state['values']['school_province'];
+  $school_tel = $form_state['values']['school_tel'];
+  $school_location = $form_state['values']['school_location'];
+  
+}*/
+
+function _obec_register_create_school($form, &$form_state) {
+	$user = $form_state['user'];	
+	$node = new stdClass();
+	$node->type = 'school';
+	$node->title = $form_state['values']['school_name_th'];
+	$node->body = '';
+	$node->uid = $user->uid;
+	$node->status = 1;
+	$node->promote = 0;
+	$node->format = 1;
+	$node->field_school_domain[0]['value'] = $form_state['values']['school_domain'];
+	$node->field_school_url[0]['value'] = $form_state['values']['school_url'];
+	$node->field_school_name_en[0]['value'] = $form_state['values']['school_name_en'];
+	$node->field_school_password[0]['value'] = $form_state['values']['school_password'];
+	$node->field_school_address[0]['value'] = $form_state['values']['school_address'];
+	$node->field_school_zipcode[0]['value'] = $form_state['values']['school_zipcode'];
+	$node->field_school_province[0]['value'] = $form_state['values']['school_province'];
+	$node->field_school_tel[0]['value'] = $form_state['values']['school_tel'];
+	$node->field_school_location[0]['value'] = $form_state['values']['school_location'];
+	node_save($node);	
+ 	return true;	
+}
+function _obec_register_create_profile($form, &$form_state) {
+	$user = $form_state['user'];	
+	$node = new stdClass();
+	$node->type = 'profile';
+	$node->title = $form_state['values']['profile_name'];
+	$node->body = '';
+	$node->uid = $user->uid;
+	$node->status = 1;
+	$node->promote = 0;
+	$node->format = 1;
+	$node->field_profile_address[0]['value'] = $form_state['values']['profile_address'];
+	$node->field_profile_province[0]['value'] = $form_state['values']['profile_province'];
+	$node->field_profile_position[0]['value'] = $form_state['values']['profile_position'];
+	$node->field_profile_tel[0]['value'] = $form_state['values']['profile_tel'];
+	$node->field_profile_email_1[0]['value'] = $form_state['values']['profile_email1'];
+	$node->field_ofile_email_2[0]['value'] = $form_state['values']['profile_email2'];
+	node_save($node);	
+ 	return true;	
+}

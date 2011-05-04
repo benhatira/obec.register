@@ -1,0 +1,6 @@
+core = "6.x"
+description = "obec register module"
+name = "Obec Register"
+package = "Obec"
+project = "obec_register"
+version = "6.x-1.0"
