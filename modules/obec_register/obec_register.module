@@ -1,5 +1,5 @@
 <?php
-
+//test commit
 function obec_register_menu() {
 
   	$items = array();
