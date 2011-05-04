@@ -1,4 +1,4 @@
-<?
+<?php
 function obec_register_schema() { 
    $schema['obec_register_auto_complete'] = array(
       'description' => t("Stores auto complete data."),
