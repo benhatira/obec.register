@@ -1,5 +1,7 @@
 <?php
-//test commit
+
+include_once('obec_register.features.inc');
+
 function obec_register_menu() {
 
   	$items = array();
