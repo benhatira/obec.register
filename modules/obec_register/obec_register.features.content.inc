@@ -881,59 +881,6 @@ function obec_register_content_default_fields() {
     ),
   );
 
-  // Exported field: field_testtype1
-  $fields['testtype-field_testtype1'] = array(
-    'field_name' => 'field_testtype1',
-    'type_name' => 'testtype',
-    'display_settings' => array(
-      'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
-      ),
-      'teaser' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      '4' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-    'widget_active' => '1',
-    'type' => 'number_decimal',
-    'required' => '0',
-    'multiple' => '0',
-    'module' => 'number',
-    'active' => '1',
-    'prefix' => '',
-    'suffix' => '',
-    'min' => '',
-    'max' => '',
-    'allowed_values' => '',
-    'allowed_values_php' => '',
-    'precision' => '10',
-    'scale' => '2',
-    'decimal' => '.',
-    'widget' => array(
-      'default_value' => array(
-        '0' => array(
-          'value' => '',
-          '_error_element' => 'default_value_widget][field_testtype1][0][value',
-        ),
-      ),
-      'default_value_php' => NULL,
-      'label' => 'testtype1',
-      'weight' => '31',
-      'description' => '',
-      'type' => 'number',
-      'module' => 'number',
-    ),
-  );
-
   // Translatables
   // Included for use with string extractors like potx.
   t('Approve');
@@ -942,7 +889,6 @@ function obec_register_content_default_fields() {
   t('Password');
   t('School name [en]');
   t('Url');
-  t('testtype1');
   t('จังหวัด');
   t('ตำแหน่ง');
   t('ที่อยู่');
