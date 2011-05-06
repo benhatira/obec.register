@@ -931,6 +931,49 @@ function obec_register_content_default_fields() {
     ),
   );
 
+  // Exported field: field_test_field3
+  $fields['test-field_test_field3'] = array(
+    'field_name' => 'field_test_field3',
+    'type_name' => 'test',
+    'display_settings' => array(
+      'label' => array(
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'number_float',
+    'required' => '0',
+    'multiple' => '0',
+    'module' => 'number',
+    'active' => '1',
+    'prefix' => '',
+    'suffix' => '',
+    'min' => '',
+    'max' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'widget' => array(
+      'label' => 'test3',
+      'weight' => '32',
+      'description' => '',
+      'type' => 'number',
+      'module' => 'number',
+    ),
+  );
+
   // Translatables
   // Included for use with string extractors like potx.
   t('Approve');
@@ -940,6 +983,7 @@ function obec_register_content_default_fields() {
   t('School name [en]');
   t('Url');
   t('test2');
+  t('test3');
   t('จังหวัด');
   t('ตำแหน่ง');
   t('ที่อยู่');
