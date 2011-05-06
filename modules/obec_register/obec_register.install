@@ -56,6 +56,28 @@ function obec_register_schema() {
   return $schema;
 }
 
+function obec_register_update_6000() {
+  $schema['mytable2'] = array(
+    'description' => t("Stores auto complete data."),
+    'fields' => array(
+   	    'id' => array(
+   	        'description' => t("data Id."),
+   	        'type' => 'int',
+   	        'unsigned' => TRUE,
+   	        'not null' => TRUE
+   	      ),
+   	      'province' => array(
+    			  'description' => t("province name"),
+    		    'type' => 'varchar',
+    		    'length' => 60,
+    		  ),
+      ),
+    'primary key' => array('id'),
+  );
+  $ret = array();
+  db_create_table($ret, 'mytable2', $schema['mytable2']);
+  return $ret;
+}
 /**
  * Implementation of hook_install().
  */
